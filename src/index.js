@@ -14,7 +14,7 @@ const vote = require("./models/vote");
 
 // Create an Express app
 const app = express();
-const port = Number(process.env.HTTP_PORT || 5005);
+const port = Number(process.env.HTTP_PORT || 8080);
 
 // Apply middleware
 app.use(cors({ origin: "*", methods: ["POST", "GET"] }));

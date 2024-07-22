@@ -1,6 +1,7 @@
 const controllers = require("../controllers");
 const fs = require("fs");
 const azure = require("azure-storage");
+const { AgendaSchema } = require("../models");
 // create agenda
 const blobService = azure.createBlobService(
   process.env.AZURE_STORAGE_ACCOUNT_STORAGE_STRING
@@ -279,7 +280,10 @@ const do_vote = async (req, res, next) => {
       tmp.push({ user_id: user_id, decision: decision });
     }
     const updateDoc = {
-      $set: { vote_info: JSON.stringify(tmp) },
+      $set: { 
+        vote_info: JSON.stringify(tmp),
+        // voters: 
+      },
     };
 
     const options = {
@@ -290,6 +294,18 @@ const do_vote = async (req, res, next) => {
       updateDoc,
       options,
     });
+
+    await AgendaSchema.updateOne(
+      { _id : agenda_id },
+      {
+        $push : {
+          voters : {
+            user : user_id,
+            decision : decision
+          }
+        }
+      }
+    );
 
     res.status(200).json({ data: data });
   } catch (err) {

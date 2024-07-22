@@ -11,6 +11,7 @@ const controllers = require("../controllers");
 const Users = require("../models/users");
 const Sessions = require("../models/session");
 const Agenda = require("../models/agenda");
+const mongoose = require("mongoose");
 
 const login = async (req, res) => {
   try {
@@ -101,9 +102,9 @@ const get_tv_users = async (req, res, next) => {
 // All users list
 // -------------------------------------------------
 
-const users_list = async (req, res ) => {
+const users_list = async (req, res) => {
   try {
-    const { page = 1, itemsPerPage = 10, search = "" } = req.query;
+    const { page = 1, itemsPerPage = 10, search = "", sort = "" } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const itemsPerPageNumber = parseInt(itemsPerPage, 10);
@@ -113,9 +114,16 @@ const users_list = async (req, res ) => {
       query.name = { $regex: search, $options: "i" };
     }
 
-    const totalItems = await Users.countDocuments(query);
+    const sortQuery = {};
+    if (sort) {
+      sortQuery[sort] =  1;
+    } else {
+      sortQuery['createdAt'] = -1;
+    }
 
+    const totalItems = await Users.countDocuments(query);
     const users = await Users.find(query)
+      .sort(sortQuery)
       .skip((pageNumber - 1) * itemsPerPageNumber)
       .limit(itemsPerPageNumber);
 
@@ -131,13 +139,14 @@ const users_list = async (req, res ) => {
   }
 };
 
+
 // -------------------------------------------------
 // All sessions list
 // -------------------------------------------------
 
 const sessions_list = async (req, res ) => {
   try {
-    const { page = 1, itemsPerPage = 10, search = "" } = req.query;
+    const { page = 1, itemsPerPage = 10, search = "",sort ="" } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const itemsPerPageNumber = parseInt(itemsPerPage, 10);
@@ -149,7 +158,15 @@ const sessions_list = async (req, res ) => {
 
     const totalItems = await Sessions.countDocuments(query);
 
+    const sortQuery = {};
+    if (sort) {
+      sortQuery[sort] =  1;
+    } else {
+      sortQuery['createdAt'] = -1;
+    }
+
     const users = await Sessions.find(query)
+      // .sort(sortQuery)
       .skip((pageNumber - 1) * itemsPerPageNumber)
       .limit(itemsPerPageNumber);
 
@@ -171,7 +188,7 @@ const sessions_list = async (req, res ) => {
 
 const agendas_list = async (req, res ) => {
   try {
-    const { page = 1, itemsPerPage = 10, search = "" } = req.query;
+    const { page = 1, itemsPerPage = 10, search = "", sort } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const itemsPerPageNumber = parseInt(itemsPerPage, 10);
@@ -183,7 +200,15 @@ const agendas_list = async (req, res ) => {
 
     const totalItems = await Agenda.countDocuments(query);
 
-    const users = await Agenda.find(query)
+    const sortQuery = {};
+    if (sort) {
+      sortQuery[sort] =  1;
+    } else {
+      sortQuery['createdAt'] = -1;
+    }
+
+    const users = await Agenda.find(query).populate('voters.user')
+      // .sort(sortQuery)
       .skip((pageNumber - 1) * itemsPerPageNumber)
       .limit(itemsPerPageNumber);
 
@@ -227,7 +252,7 @@ const createUser = async (req, res) => {
     const { name, email, password, city, role, party } = req.body;
 
     
-    const user = await controllers.Auth.create({
+    const user = await Users.create({
       name: name,
       email: email,
       password: password,

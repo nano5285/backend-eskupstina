@@ -81,6 +81,7 @@ const Agenda = {
       throw new Error(err.message);
     }
   },
+  
   updateVote: async ({ filter, updateDoc, options }) => {
     try {
       const result = await AgendaSchema.updateOne(filter, updateDoc, options);
@@ -89,6 +90,7 @@ const Agenda = {
       throw new Error(err.message);
     }
   },
+
   findOne: async (props) => {
     const { filter } = props;
     try {

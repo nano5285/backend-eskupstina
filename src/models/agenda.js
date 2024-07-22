@@ -34,8 +34,18 @@ const BasicSchema = new Schema({
   },
   position: {
     type: Number
-  }
+  },
+  voters: {
+    user : {
+      type : mongoose.Types.ObjectId,
+      ref : "users"
+    },
+    decision : {
+      type : Number,
+    }
+  },
 },{timestamps:true});
+  
 
 const Agenda  = mongoose.model("agenda", BasicSchema);
 module.exports = Agenda;

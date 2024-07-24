@@ -4,8 +4,6 @@ const Auth = {
   create: async (props) => {
     const { name, email, password, role, city, party } = props;
 
-    console.log("paja");
-    console.log(props);
     try {
       const newData = new UserSchema({
         name: name,
@@ -14,9 +12,7 @@ const Auth = {
         role: role,
         city: city,
         party: party,
-        createdAt: new Date(),
       });
-
       const saveData = await newData.save();
 
       if (!saveData) {

@@ -130,7 +130,6 @@ const createUser = async (req, res) => {
       role: role,
       party: party,
     });
-
     res.status(200).json({ status: 1, data: user });
   } catch (error) {
     console.error("Error processing file upload:", error);

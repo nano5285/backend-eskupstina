@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const { Schema } = mongoose;
 
 // Basic Schema
@@ -29,16 +28,18 @@ const BasicSchema = new Schema({
   party: {
     type: String,
     ref: "party",
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    expires: 300,
-  },
-  updatedAt: {
-    type: Date,
-    default: "",
-  },
-});
+    },
+  // createdAt: {
+  //   type: Date,
+  //   default: Date.now,
+  // },
+ 
+  // updatedAt: {
+  //   type: Date,
+  //   default: "",
+  // }
+ },
+  {timestamps:true}
+);
 
 module.exports = mongoose.model("users", BasicSchema);

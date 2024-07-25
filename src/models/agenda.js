@@ -27,6 +27,7 @@ const BasicSchema = new Schema({
   agenda_type: {
     type: String,
     default: "pre_agenda",
+    // indexedDB: true,
   },
   vote_info: {
     type: String,

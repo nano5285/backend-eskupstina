@@ -111,9 +111,14 @@ const Agenda = {
   },
   findAll: async () => {
     try {
-      const allSessions = await AgendaSchema.find().sort({position:1});
+      const allSessions = await AgendaSchema.find().sort({
+        agenda_type : -1,
+        position : 1,
+      })
+      // .sort({ position : -1 });
       return allSessions;
     } catch (err) {
+      console.log(err.message, 'messsage');
       throw new Error(err.message);
     }
   },

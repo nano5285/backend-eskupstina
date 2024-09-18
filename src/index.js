@@ -87,17 +87,57 @@ io.on("connection", (socket) => {
     io.emit("message", message, id);
   });
 
+  // socket.on("vote_update", async (message, id, voteUpdate) => {
+  //   console.log("update", agenda, id, voteUpdate);
+  //   liveVotingResults = id;
+  //   agenda = agenda || {}; // Initialize agenda if it's not already set
+  //   agenda.vote_info = JSON.stringify([
+  //     ...JSON.parse(agenda.vote_info || "[]"),
+
+  //     voteUpdate,
+  //   ]);
+  //   console.log("after updating sending user this", message, id, agenda);
+  //   io.emit("vote_update", message, id, agenda);
+  //   try {
+  //     const filter = { _id: id };
+  //     const updateDoc = {
+  //       vote_info: agenda.vote_info,
+  //     };
+  //     const options = { upsert: true };
+  //     await controllers.Agenda.updateVote({ filter, updateDoc, options });
+  //   } catch (error) {
+  //     console.error("Error saving vote:", error);
+  //   }
+  // });
+
+
   socket.on("vote_update", async (message, id, voteUpdate) => {
     console.log("update", agenda, id, voteUpdate);
     liveVotingResults = id;
     agenda = agenda || {}; // Initialize agenda if it's not already set
-    agenda.vote_info = JSON.stringify([
-      ...JSON.parse(agenda.vote_info || "[]"),
-
-      voteUpdate,
-    ]);
+  
+    // Parse the current vote_info array, or initialize it as an empty array
+    const currentVotes = JSON.parse(agenda.vote_info || "[]");
+    
+    // Check if there's already a vote from the same user
+    const existingVoteIndex = currentVotes.findIndex(
+      (vote) => vote.user_id === voteUpdate.user_id
+    );
+  
+    if (existingVoteIndex !== -1) {
+      // Update the existing vote
+      currentVotes[existingVoteIndex] = voteUpdate;
+    } else {
+      // Add a new vote
+      currentVotes.push(voteUpdate);
+    }
+  
+    // Stringify the updated votes array and assign it to agenda.vote_info
+    agenda.vote_info = JSON.stringify(currentVotes);
+  
     console.log("after updating sending user this", message, id, agenda);
     io.emit("vote_update", message, id, agenda);
+
     try {
       const filter = { _id: id };
       const updateDoc = {
@@ -108,7 +148,11 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error("Error saving vote:", error);
     }
+
   });
+  
+
+
 
   socket.on("vote_close", (message, id) => {
     console.log("close", id);

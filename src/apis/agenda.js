@@ -276,8 +276,20 @@ const do_vote = async (req, res, next) => {
     )
       tmp.push({ user_id: user_id, decision: decision });
     else {
-      tmp = JSON.parse(agenda.vote_info);
-      tmp.push({ user_id: user_id, decision: decision });
+      tmp = JSON.parse(agenda.vote_info); 
+      
+      const existingVoteIndex = tmp.findIndex(
+        (vote) => {
+          console.log('client vote update: ', vote.user_id, user_id, vote.user_id === user_id);
+          return vote.user_id === user_id
+        }
+      );
+
+      if (existingVoteIndex === -1) {
+        // Add a new vote
+        tmp.push({ user_id: user_id, decision: decision });
+      }      
+
     }
     const updateDoc = {
       $set: { 

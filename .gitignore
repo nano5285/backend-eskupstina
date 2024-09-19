@@ -2,9 +2,11 @@
 node_modules/
 build
 dist
+temp_auto_push.bat
 coverage
 .env
 #Hardhat files
 cache
 artifacts
-.vscode
+.gitignore
+branch_structure.json

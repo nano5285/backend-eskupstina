@@ -119,19 +119,21 @@ io.on("connection", (socket) => {
     // Parse the current vote_info array, or initialize it as an empty array
     const currentVotes = JSON.parse(agenda.vote_info || "[]");
     
-    // Check if there's already a vote from the same user
-    const existingVoteIndex = currentVotes.findIndex(
-      (vote) => vote.user_id === voteUpdate.user_id
-    );
-  
-    if (existingVoteIndex !== -1) {
-      // Update the existing vote
-      currentVotes[existingVoteIndex] = voteUpdate;
-    } else {
-      // Add a new vote
-      currentVotes.push(voteUpdate);
+    if(voteUpdate) {
+      // Check if there's already a vote from the same user
+      const existingVoteIndex = currentVotes.findIndex(
+        (vote) => vote.user_id === voteUpdate.user_id
+      );
+    
+      if (existingVoteIndex !== -1) {
+        // Update the existing vote
+        currentVotes[existingVoteIndex] = voteUpdate;
+      } else {
+        // Add a new vote
+        currentVotes.push(voteUpdate);
+      }
     }
-  
+
     // Stringify the updated votes array and assign it to agenda.vote_info
     agenda.vote_info = JSON.stringify(currentVotes);
   
@@ -151,8 +153,6 @@ io.on("connection", (socket) => {
 
   });
   
-
-
 
   socket.on("vote_close", (message, id) => {
     console.log("close", id);

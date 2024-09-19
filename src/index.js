@@ -122,7 +122,10 @@ io.on("connection", (socket) => {
     if(voteUpdate) {
       // Check if there's already a vote from the same user
       const existingVoteIndex = currentVotes.findIndex(
-        (vote) => vote.user_id === voteUpdate.user_id
+        (vote) => {
+          console.log('server vote update ', vote.user_id, voteUpdate.user_id, vote.user_id === voteUpdate.user_id)
+          return vote.user_id === voteUpdate.user_id
+        }
       );
     
       if (existingVoteIndex !== -1) {

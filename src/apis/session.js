@@ -51,7 +51,7 @@ const get_all_sessions = async (req, res) => {
       );
 
       organizedData.push({
-        id: session._id,
+        _id: session._id,
         name: session.name,
         agendas: sessionAgendas,
       });
@@ -63,6 +63,22 @@ const get_all_sessions = async (req, res) => {
     res.status(500).json({ error: "Error getting all sessions" });
   }
 };
+
+
+async function get_session_or_latest(req, res) {
+  console.log('req.query: ', req.query);
+  try {
+    const { session_id } = req.query;
+    const session = await controllers.Session.findSessionOrLatest(session_id);
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found.'});
+    }
+    res.json(session);
+  } catch(error) {
+    console.error("Error getting session:", error);
+    res.status(500).json({ error: "Error getting session" });
+  }
+}
 
 const delete_session = async (req, res, next) => {
   try {
@@ -92,4 +108,5 @@ module.exports = {
   createSession,
   delete_session,
   updateSession,
+  get_session_or_latest,
 };

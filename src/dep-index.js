@@ -12,8 +12,6 @@ const config = require("./config");
 const ConnectDatabase = require("./config/database");
 const vote = require("./models/vote");
 
-const memQueue = require("./memQueue");
-
 // Create an Express app
 const app = express();
 const port = Number(process.env.HTTP_PORT || 5005);
@@ -65,27 +63,18 @@ const io = new Server(httpServer, {
   },
 });
 let liveVotingResults;
-let currentAgendaId = null;
-
-const currentAgendaVotes = () => memQueue.get(currentAgendaId) || [];
-
+let agenda;
 // Handle socket connections
 io.on("connection", (socket) => {
-  if (currentAgendaId) {
-    io.emit("check_user_voting_permission", currentAgendaId, currentAgendaVotes());
-    io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
+  if (liveVotingResults) {
+    socket.emit("live_voting_results", liveVotingResults);
   }
 
-  socket.on("vote_start", (selectedAgenda) => {
-    currentAgendaId = selectedAgenda._id;
-    console.log("voting start for agenda => ", currentAgendaId);
-
-    const agendaInfo = { 
-      _id: selectedAgenda._id,
-      name: selectedAgenda.name
-    }; 
-
-    io.emit("vote_start", agendaInfo);
+  socket.on("vote_start", (id, agendaObj) => {
+    liveVotingResults = id;
+    agenda = agendaObj;
+    console.log("voting start for agenda => ", agendaObj);
+    io.emit("vote_start", id, agendaObj);
   });
 
   socket.on("disconnect", () => {
@@ -98,44 +87,88 @@ io.on("connection", (socket) => {
     io.emit("message", message, id);
   });
 
-  socket.on("vote_update", async (voteData) => {
-    console.log("\n vote data: ", voteData);
-    const { user_id, agenda_id, decision } = voteData;
-    // only record votes for agenda that match the current agenda
-    if(currentAgendaId === agenda_id) {
-      memQueue.push(agenda_id, { user_id, decision });
-      console.log("\n notifying users with ",currentAgendaId, currentAgendaVotes());
-      io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
-     }
-  });
+  // socket.on("vote_update", async (message, id, voteUpdate) => {
+  //   console.log("update", agenda, id, voteUpdate);
+  //   liveVotingResults = id;
+  //   agenda = agenda || {}; // Initialize agenda if it's not already set
+  //   agenda.vote_info = JSON.stringify([
+  //     ...JSON.parse(agenda.vote_info || "[]"),
 
-  socket.on("vote_close", async (id) => {
-    console.log("close", id);
-    io.emit("vote_close", id);
-    io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
+  //     voteUpdate,
+  //   ]);
+  //   console.log("after updating sending user this", message, id, agenda);
+  //   io.emit("vote_update", message, id, agenda);
+  //   try {
+  //     const filter = { _id: id };
+  //     const updateDoc = {
+  //       vote_info: agenda.vote_info,
+  //     };
+  //     const options = { upsert: true };
+  //     await controllers.Agenda.updateVote({ filter, updateDoc, options });
+  //   } catch (error) {
+  //     console.error("Error saving vote:", error);
+  //   }
+  // });
+
+
+  socket.on("vote_update", async (message, id, voteUpdate) => {
+    console.log("update", agenda, id, voteUpdate);
+    liveVotingResults = id;
+    agenda = agenda || {}; // Initialize agenda if it's not already set
+  
+    // Parse the current vote_info array, or initialize it as an empty array
+    const currentVotes = JSON.parse(agenda.vote_info || "[]");
+    
+    if(voteUpdate) {
+      // Check if there's already a vote from the same user
+      const existingVoteIndex = currentVotes.findIndex(
+        (vote) => {
+          console.log('server vote update ', vote.user_id, voteUpdate.user_id, vote.user_id === voteUpdate.user_id)
+          return vote.user_id === voteUpdate.user_id
+        }
+      );
+    
+      if (existingVoteIndex !== -1) {
+        // Update the existing vote
+        currentVotes[existingVoteIndex] = voteUpdate;
+      } else {
+        // Add a new vote
+        currentVotes.push(voteUpdate);
+      }
+    }
+
+    // Stringify the updated votes array and assign it to agenda.vote_info
+    agenda.vote_info = JSON.stringify(currentVotes);
+  
+    console.log("after updating sending user this", message, id, agenda);
+    io.emit("vote_update", message, id, agenda);
 
     try {
-      const filter = { _id: currentAgendaId };
+      const filter = { _id: id };
       const updateDoc = {
-        votes: currentAgendaVotes(),
+        vote_info: agenda.vote_info,
       };
       const options = { upsert: true };
       await controllers.Agenda.updateVote({ filter, updateDoc, options });
-      // clear all current agenda states from memory and inform users of successful saving of all votes.
-      memQueue.remove(currentAgendaId);
-      io.emit("voting_saved", currentAgendaId);
-      currentAgendaId = null;  
     } catch (error) {
       console.error("Error saving vote:", error);
-      io.emit("voting_not_saved", currentAgendaId);
     }
+
+  });
+  
+
+  socket.on("vote_close", (id) => {
+    console.log("close", id);
+    io.emit("vote_close", id, agenda);
+    io.emit("live_voting_results", liveVotingResults);
+    agenda = null;
   });
 
   socket.on("vote_reset", () => {
-    memQueue.remove(currentAgendaId);
-    currentAgendaId = null;
+    liveVotingResults = null;
     io.emit("vote_reset");
-    io.emit("live_voting_results");
+    io.emit("live_voting_results", liveVotingResults);
+    agenda = null;
   });
 });
 

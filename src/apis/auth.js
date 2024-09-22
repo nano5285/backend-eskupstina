@@ -208,7 +208,7 @@ const agendas_list = async (req, res ) => {
       sortQuery['createdAt'] = -1;
     }
 
-    const users = await Agenda.find(query).populate('voters.user')
+    const users = await Agenda.find(query).populate('votes.user')
       // .sort(sortQuery)
       .skip((pageNumber - 1) * itemsPerPageNumber)
       .limit(itemsPerPageNumber);
@@ -312,7 +312,7 @@ const agendas_vote = async (req, res ) => {
       sortQuery['createdAt'] = -1;
     }
 
-    const users = await Agenda.find(query).populate('voters.user')
+    const users = await Agenda.find(query).populate('votes.user')
       // .sort(sortQuery)
       .skip((pageNumber - 1) * itemsPerPageNumber)
       .limit(itemsPerPageNumber);

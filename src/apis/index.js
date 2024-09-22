@@ -19,8 +19,11 @@ const API = (router) => {
   router.get("/tv-users", AUTH.get_tv_users);
   router.get("/pdf", Agenda.show_pdf);
   router.get("/pdf-blob", PDF.get_pdf_blob);
+  router.get("/live_votes", Agenda.live_votes);
+  router.post("/record_live_vote", Agenda.record_live_vote);
   router.post("/vote", Agenda.do_vote);
   router.get("/get_vote", Vote.get_vote);
+  router.get('/get_session_or_latest', Session.get_session_or_latest);
   router.get("/get_sessions", Session.get_all_sessions);
   router.post("/start_vote", Agenda.start_vote);
   router.post("/close_vote", Agenda.close_vote);

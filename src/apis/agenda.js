@@ -2,6 +2,8 @@ const controllers = require("../controllers");
 const fs = require("fs");
 const azure = require("azure-storage");
 const { AgendaSchema } = require("../models");
+const memQueue = require('../memQueue');
+
 // create agenda
 const blobService = azure.createBlobService(
   process.env.AZURE_STORAGE_ACCOUNT_STORAGE_STRING
@@ -104,7 +106,6 @@ const get_agenda = async (req, res, next) => {
     const { id } = req.query;
     if (id) {
       const agenda = await controllers.Agenda.findOne({ filter: id });
-      console;
       res.status(200).json({ data: agenda });
     }
     const agendas = await controllers.Agenda.find("");
@@ -160,21 +161,18 @@ const delete_agenda = async (req, res, next) => {
   try {
     const agenda_item_id = req.params.id;
     if (!agenda_item_id) {
-      res.status(400).json({ error: "agenda_item_id parameter is missing" });
-      return;
+      return res.status(400).json({ error: "agenda_item_id parameter is missing" });
     }
     const filter = { _id: agenda_item_id };
     const result = await controllers.Agenda.delete({ filter });
     if (result.deletedCount === 0) {
-      res.status(404).json({ error: "Agenda item not found" });
-      return;
+      return res.status(404).json({ error: "Agenda item not found" });
     }
 
     const removedFromSession = controllers.Session.removeAgenda(agenda_item_id);
 
     if (!removedFromSession) {
-      res.status(404).json({ error: "Agenda item not deleted from session" });
-      return;
+      return res.status(404).json({ error: "Agenda item not deleted from session" });
     }
     res
       .status(200)
@@ -193,6 +191,24 @@ const delete_agenda = async (req, res, next) => {
  *********************************
  ********************************* */
 
+
+const live_votes = async (req, res, next) => {
+  console.log('live votes (body): ', req.query);
+  try {
+    const { agenda_id } = req.query;
+    if (!agenda_id) {
+      return res.status(400).json({ error: "agenda_id parameter is missing" });
+    }
+    const votes = memQueue.get(agenda_id) || [];
+    console.log('votes(live_votes): ', votes);
+    return res.json({ votes });
+    
+  } catch (err) {
+    console.log(err.message);
+    res.status(401).end();
+  }
+}
+
 // start_vote
 const start_vote = async (req, res, next) => {
   try {
@@ -200,8 +216,7 @@ const start_vote = async (req, res, next) => {
     console.log(req.body);
     const { agenda_item_id } = req.body;
     if (!agenda_item_id) {
-      res.status(400).json({ error: "agenda_item_id parameter is missing" });
-      return;
+      return res.status(400).json({ error: "agenda_item_id parameter is missing" });
     }
     const filter = { _id: agenda_item_id };
     const updateDoc = {
@@ -227,8 +242,7 @@ const close_vote = async (req, res, next) => {
   try {
     const { agenda_item_id } = req.body;
     if (!agenda_item_id) {
-      res.status(400).json({ error: "agenda_item_id parameter is missing" });
-      return;
+      return res.status(400).json({ error: "agenda_item_id parameter is missing" });
     }
     const filter = { _id: agenda_item_id };
     const updateDoc = {
@@ -254,10 +268,9 @@ const do_vote = async (req, res, next) => {
   try {
     const { user_id, agenda_id, decision } = req.body;
     if (!user_id || !agenda_id) {
-      res.status(400).json({
+      return res.status(400).json({
         error: "user_id, agenda_id, or decision parameter is missings.",
       });
-      return;
     }
     let agenda = await controllers.Agenda.findOne({
       filter: { $eq: agenda_id },
@@ -307,17 +320,17 @@ const do_vote = async (req, res, next) => {
       options,
     });
 
-    await AgendaSchema.updateOne(
-      { _id : agenda_id },
-      {
-        $push : {
-          voters : {
-            user : user_id,
-            decision : decision
-          }
-        }
-      }
-    );
+    // await AgendaSchema.updateOne(
+    //   { _id : agenda_id },
+    //   {
+    //     $push : {
+    //       votes : {
+    //         user : user_id,
+    //         decision : decision
+    //       }
+    //     }
+    //   }
+    // );
 
     res.status(200).json({ data: data });
   } catch (err) {
@@ -326,18 +339,38 @@ const do_vote = async (req, res, next) => {
   }
 };
 
+
+const record_live_vote = async (req, res, next) => {
+  console.log('recording votes(record_live_votes): ', req.body);
+  try {
+    const { user_id, agenda_id, decision } = req.body;
+    if (!user_id || !agenda_id) {
+      return res.status(400).json({
+        error: "user_id, agenda_id, or decision parameter is missings.",
+      });
+    }
+    memQueue.push(agenda_id, { user_id, decision });
+    res.status(200).json({ success: true });
+  } catch(err) {
+    console.log('Error recording live vote :', req.body);
+    res.status(401).end();
+  }
+}
+
 // reset_vote
 const reset_vote = async (req, res, next) => {
+  console.log('resetting agenda: ', req.body);
   try {
     const { agenda_id } = req.body;
     if (!agenda_id) {
-      res.status(400).json({ error: "agenda_id parameter is missing" });
-      return;
+      return res.status(400).json({ error: "agenda_id parameter is missing" });
     }
     const filter = { _id: agenda_id };
     const updateDoc = {
       $set: {
-        vote_info: null,
+        // vote_info: null,
+        // voters: null,
+        votes: [],
         vote_state: 0,
       },
     };
@@ -349,7 +382,7 @@ const reset_vote = async (req, res, next) => {
       updateDoc,
       options,
     });
-    res.status(200).json({ data: data });
+    return res.status(200).json({ data: data });
   } catch (err) {
     console.log(err.message);
     res.status(401).end();
@@ -363,8 +396,11 @@ module.exports = {
   start_vote,
   close_vote,
   updateAgenda,
+  live_votes,
   do_vote,
   reset_vote,
   get_agendas,
   delete_agenda, // Add the delete_agenda function to module exports
+
+  record_live_vote,
 };

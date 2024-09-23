@@ -60,6 +60,21 @@ const Session = {
       throw new Error(err.message);
     }
   },
+  findSessionOrLatest: async (sessionId) => {
+    let session;
+    if(sessionId) {
+      session = SessionSchema.findById(sessionId, {'start_time': -1 })
+        // .populate('agendas')
+        .lean();
+    } else {
+      session = SessionSchema.findOne({}, {'start_time': -1 })
+        // .populate('agendas')
+        .sort({ _id: -1 })
+        .lean();
+    }    
+    return session;
+  },
+
   removeAgenda: async (props) => {
     try {
       let agendaDeleted = false;

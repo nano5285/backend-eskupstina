@@ -29,14 +29,23 @@ const BasicSchema = new Schema({
     default: "pre_agenda",
     // indexedDB: true,
   },
-  vote_info: {
-    type: String,
-    default: "",
-  },
+  // vote_info: {
+  //   type: String,
+  //   default: "",
+  // },
   position: {
     type: Number
   },
-  voters: {
+  // voters: [{
+  //   user : {
+  //     type : mongoose.Types.ObjectId,
+  //     ref : "users"
+  //   },
+  //   decision : {
+  //     type : Number,
+  //   }
+  // }],  
+  votes: [{
     user : {
       type : mongoose.Types.ObjectId,
       ref : "users"
@@ -44,7 +53,7 @@ const BasicSchema = new Schema({
     decision : {
       type : Number,
     }
-  },
+  }],
 },{timestamps:true});
   
 

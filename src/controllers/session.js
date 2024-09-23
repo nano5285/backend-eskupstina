@@ -63,12 +63,12 @@ const Session = {
   findSessionOrLatest: async (sessionId) => {
     let session;
     if(sessionId) {
-      session = SessionSchema.findById(sessionId)
-        .populate('agendas')
+      session = SessionSchema.findById(sessionId, {'start_time': -1 })
+        // .populate('agendas')
         .lean();
     } else {
-      session = SessionSchema.findOne({})
-        .populate('agendas')
+      session = SessionSchema.findOne({}, {'start_time': -1 })
+        // .populate('agendas')
         .sort({ _id: -1 })
         .lean();
     }    

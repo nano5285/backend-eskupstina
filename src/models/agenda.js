@@ -46,7 +46,7 @@ const BasicSchema = new Schema({
   //   }
   // }],  
   votes: [{
-    user : {
+    user_id : {
       type : mongoose.Types.ObjectId,
       ref : "users"
     },

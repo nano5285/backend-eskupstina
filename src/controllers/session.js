@@ -61,43 +61,20 @@ const Session = {
     }
   },
   findSessionOrLatest: async (sessionId) => {
-    let session;
+    let session = {};
+
     if(sessionId) {
-      session = SessionSchema.findById(sessionId)
+      session = await SessionSchema.findById(sessionId)
         .populate('agendas')
         .lean();
+      return session;
+
     } else {
       // session = SessionSchema.findOne({})
       // .sort({ start_time: -1 }) // Sort by start_time in descending order (latest first)
       // .populate('agendas') // Populate agendas after sorting
       // .lean(); //
-    
-    
-        session = SessionSchema.aggregate([
-              {
-                $addFields: {
-                  start_time_as_date: {
-                    $dateFromString: {
-                      dateString: "$start_time"
-                    }
-                  }
-                }
-              },
-              {
-                $sort: { start_time_as_date: 1 } // Sort by converted date
-              },
-              {
-                $limit: 1 // Since you want the latest one, limit to 1 result
-              },
-              {
-                $lookup: {
-                  from: 'agendas',
-                  localField: 'agendas',
-                  foreignField: '_id',
-                  as: 'agendas'
-                }
-              }
-            ]).exec();session = SessionSchema.aggregate([
+      session = await SessionSchema.aggregate([
         {
           $addFields: {
             start_time_as_date: {
@@ -121,13 +98,10 @@ const Session = {
             as: 'agendas'
           }
         }
-      ]).exec();    
-    
-    
+      ]).exec();
+      return session[0];    
     }
     
-    
-    return session;
   },
 
   // Function to get all distinct years from start_time

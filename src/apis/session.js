@@ -80,6 +80,16 @@ async function get_session_or_latest(req, res) {
   }
 }
 
+async function get_sessions_by_year(req, res) {
+  try {
+    const years = await controllers.Session.getSessionsByYear();
+    return res.json({ years });
+  } catch(error) {
+    console.error("Error getting session years:", error);
+    res.status(500).json({ error: "Error getting session years" });
+  }
+}
+
 const delete_session = async (req, res, next) => {
   try {
     const session_item_id = req.params.id;
@@ -109,4 +119,5 @@ module.exports = {
   delete_session,
   updateSession,
   get_session_or_latest,
+  get_sessions_by_year,
 };

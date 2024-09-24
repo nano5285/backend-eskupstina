@@ -25,6 +25,7 @@ const API = (router) => {
   router.get("/get_vote", Vote.get_vote);
   router.get('/get_session_or_latest', Session.get_session_or_latest);
   router.get("/get_sessions", Session.get_all_sessions);
+  router.get('/sessions_by_year', Session.get_sessions_by_year);
   router.post("/start_vote", Agenda.start_vote);
   router.post("/close_vote", Agenda.close_vote);
   router.post("/reset_vote", Agenda.reset_vote);

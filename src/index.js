@@ -79,17 +79,17 @@ io.on("connection", (socket) => {
     io.emit("live_voting_results", liveVotingResults, null);
   }
 
-  socket.on("vote_start", (selectedAgenda) => {
+  socket.on("vote_start", (selectedAgenda, sessionId) => {
     currentAgendaId = selectedAgenda._id;
     liveVotingResults = selectedAgenda._id;
-    console.log("voting start for agenda => ", currentAgendaId);
+    console.log("voting start for agenda => ", currentAgendaId, sessionId);
 
     const agendaInfo = { 
       _id: selectedAgenda._id,
       name: selectedAgenda.name
     }; 
 
-    io.emit("vote_start", agendaInfo);
+    io.emit("vote_start", agendaInfo, sessionId);
   });
 
   socket.on("disconnect", () => {

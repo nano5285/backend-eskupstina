@@ -4,7 +4,13 @@ const Vote = require("./vote");
 const PDF = require("./pdf");
 const multer = require("multer");
 const Session = require("./session");
-const upload = multer();
+
+const upload = multer({
+  limits: {
+    fileSize: 100 * 1024 * 1024 // for 100MB
+  }
+});
+
 const API = (router) => {
   // APIs for Auth
   router.get("/test", (req, res) => {

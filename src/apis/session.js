@@ -52,6 +52,7 @@ const get_all_sessions = async (req, res) => {
 
       organizedData.push({
         _id: session._id,
+        id: session._id,
         name: session.name,
         agendas: sessionAgendas,
       });

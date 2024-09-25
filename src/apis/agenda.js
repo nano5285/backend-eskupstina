@@ -10,6 +10,8 @@ const blobService = azure.createBlobService(
 );
 
 const createAgenda = async (req, res) => {
+  // console.log('req.body: ', req.body);
+  // console.log('req.file: ', req.file);
   try {
     // Retrieve other form data
     const { title, description, agenda_type, session, position } = req.body;

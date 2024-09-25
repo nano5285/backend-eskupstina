@@ -136,7 +136,7 @@ const Agenda = {
         let count = await AgendaSchema.countDocuments(props);
         return count;
     } catch (error) {
-        throw new Error(err.message);
+        throw new Error(error.message);
     }
   }
 };

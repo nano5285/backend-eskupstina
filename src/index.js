@@ -72,13 +72,21 @@ const currentAgendaVotes = () => memQueue.get(currentAgendaId) || [];
 
 // Handle socket connections
 io.on("connection", (socket) => {
-  if (currentAgendaId) {
-    io.emit("check_user_voting_permission", currentSessionId, currentAgendaId, currentAgendaVotes());
-    io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
-  }
+  // if (currentAgendaId) {
+  //   io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
+  // }
   if (!currentAgendaId && liveVotingResults) {
-    io.emit("live_voting_results", liveVotingResults, null);
+    socket.emit("live_voting_results", liveVotingResults, null);
   }
+
+  socket.on('i_am_in', (arg, callback)=> {
+    if(currentAgendaId) {
+      // socket.emit("check_user_voting_permission", currentSessionId, currentAgendaId, currentAgendaVotes());
+      callback(currentSessionId, currentAgendaId, currentAgendaVotes());
+    } else {
+      callback(null, null, []);
+    }
+  })
 
   socket.on("vote_start", (selectedAgenda, sessionId) => {
     currentAgendaId = selectedAgenda._id;

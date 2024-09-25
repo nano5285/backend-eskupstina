@@ -66,13 +66,14 @@ const io = new Server(httpServer, {
 });
 let liveVotingResults = null;
 let currentAgendaId = null;
+let currentSessionId = null;
 
 const currentAgendaVotes = () => memQueue.get(currentAgendaId) || [];
 
 // Handle socket connections
 io.on("connection", (socket) => {
   if (currentAgendaId) {
-    io.emit("check_user_voting_permission", currentAgendaId, currentAgendaVotes());
+    io.emit("check_user_voting_permission", currentSessionId, currentAgendaId, currentAgendaVotes());
     io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
   }
   if (!currentAgendaId && liveVotingResults) {
@@ -82,6 +83,7 @@ io.on("connection", (socket) => {
   socket.on("vote_start", (selectedAgenda, sessionId) => {
     currentAgendaId = selectedAgenda._id;
     liveVotingResults = selectedAgenda._id;
+    currentSessionId = sessionId;
     console.log("voting start for agenda => ", currentAgendaId, sessionId);
 
     const agendaInfo = { 

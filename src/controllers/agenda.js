@@ -3,9 +3,10 @@ const controllers = require("../controllers");
 
 const Agenda = {
   create: async (props) => {
-    const { name, description, pdf, agenda_type, session_id, position } = props;
+    const { _id, name, description, pdf, agenda_type, session_id, position } = props;
     try {
       const newData = new AgendaSchema({
+        _id: _id,
         name: name,
         description: description,
         pdf_path: pdf,

@@ -3,6 +3,7 @@ const fs = require("fs");
 const azure = require("azure-storage");
 const { AgendaSchema } = require("../models");
 const memQueue = require('../memQueue');
+const { ObjectId } = require('mongodb'); // Import ObjectId
 
 // create agenda
 const blobService = azure.createBlobService(
@@ -13,14 +14,17 @@ const createAgenda = async (req, res) => {
   // console.log('req.body: ', req.body);
   // console.log('req.file: ', req.file);
   try {
+    // Generate a new MongoDB ObjectId
+    const newId = new ObjectId();
+
     // Retrieve other form data
     const { title, description, agenda_type, session, position } = req.body;
 
     // Handle file
     const { buffer, originalname } = req.file;
+    const blobName = newId.toString() + "-" + originalname; // Use the ObjectId for file naming
 
     // Upload file to Azure Blob Storage
-    const blobName = originalname; // Use original file name as blob name
     await new Promise((resolve, reject) => {
       blobService.createBlockBlobFromText(
         "mainpdf",
@@ -39,6 +43,7 @@ const createAgenda = async (req, res) => {
     // Create agenda in database
     const pdf_path = blobName; // Use blob name as PDF path
     const agenda = await controllers.Agenda.create({
+      _id: newId,  // Use the same ObjectId for the agenda document
       name: title,
       description: description,
       pdf: pdf_path,
@@ -63,7 +68,9 @@ const updateAgenda = async (req, res) => {
     if (req.file) {
         console.log('check',req.file)
       const { buffer, originalname } = req.file;
-      const blobName = originalname;
+
+      const blobName = id + "-" + originalname; // Use the ObjectId for file naming
+      
       await new Promise((resolve, reject) => {
         blobService.createBlockBlobFromText(
           "mainpdf",

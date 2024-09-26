@@ -65,41 +65,41 @@ const io = new Server(httpServer, {
   },
 });
 let liveVotingResults = null;
-let currentAgendaId = null;
-let currentSessionId = null;
+// let currentAgendaId = null;
+let currentAgenda = {};
 
-const currentAgendaVotes = () => memQueue.get(currentAgendaId) || [];
+const currentAgendaVotes = () => memQueue.get(currentAgenda._id) || [];
 
 // Handle socket connections
 io.on("connection", (socket) => {
   // if (currentAgendaId) {
   //   io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
   // }
-  if (!currentAgendaId && liveVotingResults) {
+  if (!currentAgenda._id && liveVotingResults) {
     socket.emit("live_voting_results", liveVotingResults, null);
   }
 
   socket.on('i_am_in', (arg, callback)=> {
-    if(currentAgendaId) {
+    if(currentAgenda._id) {
       // socket.emit("check_user_voting_permission", currentSessionId, currentAgendaId, currentAgendaVotes());
-      callback(currentSessionId, currentAgendaId, currentAgendaVotes());
+      callback(currentAgenda, currentAgendaVotes());
     } else {
-      callback(null, null, []);
+      callback(null, []);
     }
   })
 
   socket.on("vote_start", (selectedAgenda, sessionId) => {
-    currentAgendaId = selectedAgenda._id;
     liveVotingResults = selectedAgenda._id;
-    currentSessionId = sessionId;
-    console.log("voting start for agenda => ", currentAgendaId, sessionId);
+    currentAgenda = selectedAgenda;
+    console.log("voting start for agenda => ", currentAgenda);
 
     const agendaInfo = { 
       _id: selectedAgenda._id,
-      name: selectedAgenda.name
+      session_id: selectedAgenda.session_id,
+      name: selectedAgenda.name,
     }; 
 
-    io.emit("vote_start", agendaInfo, sessionId);
+    io.emit("vote_start", agendaInfo);
   });
 
   socket.on("disconnect", () => {
@@ -116,38 +116,38 @@ io.on("connection", (socket) => {
     console.log("\n vote data: ", voteData);
     const { user_id, agenda_id, decision } = voteData;
     // only record votes for agenda that match the current agenda
-    if(currentAgendaId === agenda_id) {
+    if(currentAgenda._id === agenda_id) {
       memQueue.push(agenda_id, { user_id, decision });
-      console.log("\n notifying users with ",currentAgendaId, currentAgendaVotes());
-      io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
+      console.log("\n notifying users with ",currentAgenda._id, currentAgendaVotes());
+      io.emit("live_voting_results", currentAgenda._id, currentAgendaVotes());
      }
   });
 
   socket.on("vote_close", async (id) => {
     console.log("close", id);
     io.emit("vote_close", id);
-    io.emit("live_voting_results", currentAgendaId, currentAgendaVotes());
+    io.emit("live_voting_results", currentAgenda._id, currentAgendaVotes());
 
     try {
-      const filter = { _id: currentAgendaId };
+      const filter = { _id: currentAgenda._id };
       const updateDoc = {
         votes: currentAgendaVotes(),
       };
       const options = { upsert: true };
       await controllers.Agenda.updateVote({ filter, updateDoc, options });
       // clear all current agenda states from memory and inform users of successful saving of all votes.
-      memQueue.remove(currentAgendaId);
-      io.emit("voting_saved", currentAgendaId);
-      currentAgendaId = null;  
+      memQueue.remove(currentAgenda._id);
+      io.emit("voting_saved", currentAgenda._id);
+      currentAgenda = {};  
     } catch (error) {
       console.error("Error saving vote:", error);
-      io.emit("voting_not_saved", currentAgendaId);
+      io.emit("voting_not_saved", currentAgenda._id);
     }
   });
 
   socket.on("vote_reset", (resetData) => {
     memQueue.remove(resetData.agenda_id);
-    currentAgendaId = null;
+    currentAgenda = {};
     liveVotingResults = null;
     io.emit("vote_reset", resetData);
     io.emit("live_voting_results", null);

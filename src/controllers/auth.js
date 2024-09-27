@@ -4,6 +4,15 @@ const Auth = {
   create: async (props) => {
     const { name, email, password, role, city, party } = props;
     try {
+
+      const user = await UserSchema.findOne({ email });
+
+      if(user) {
+        const error = new Error('Email already exists! Please use another!');
+        error.statusCode = 400;
+        throw error;
+      }
+
       const newData = new UserSchema({
         name: name,
         email: email,
@@ -86,12 +95,14 @@ const Auth = {
 
   update: async (props) => {
     const { name, email, password, role, city, party, id } = props;
-
+    console.log('user id (update): ', id);
     try {
       const user = await UserSchema.findOne({ _id: id });
 
       if (!user) {
-        throw new Error("User not found");
+        const error = new Error("User not found");
+        error.statusCode = 404
+        throw error;
       }
 
       user.name = name || user.name;

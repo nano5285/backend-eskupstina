@@ -221,7 +221,7 @@ const agendas_list = async (req, res ) => {
     });
   } catch (err) {
     console.log(err.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error", reason: err.message });
   }
 };
 
@@ -244,7 +244,7 @@ const delete_user = async (req, res, next) => {
     res.status(200).json({ status: 1, message: "User deleted successfully" });
   } catch (err) {
     console.log(err.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error", reason: err.message });
   }
 };
 
@@ -252,8 +252,13 @@ const createUser = async (req, res) => {
   try {
     const { name, email, password, city, role, party } = req.body;
 
+    let user = await Users.findOne({ email })
+
+    if(user) {
+      return res.status(400).json({ error: 'Email already exists! Please use another!' });
+    }
     
-    const user = await Users.create({
+    user = await Users.create({
       name: name,
       email: email,
       password: password,
@@ -263,8 +268,8 @@ const createUser = async (req, res) => {
     });
     res.status(200).json({ status: 1, data: user });
   } catch (error) {
-    console.error("Error processing file upload:", error);
-    res.status(500).json({ error: "Error processing file upload" });
+    console.error("Error creating user:", error);
+    res.status(500).json({ error: "Error creating user", reason: error?.message });
   }
 };
 
@@ -272,7 +277,6 @@ const updateUser = async (req, res) => {
   try {
     const { name, email, password, city, role, party } = req.body;
     const { id } = req.query;
-
     const user = await controllers.Auth.update({
       name: name,
       email: email,
@@ -285,8 +289,11 @@ const updateUser = async (req, res) => {
 
     res.status(200).json({ status: 1, data: user });
   } catch (error) {
-    console.error("Error processing file upload:", error);
-    res.status(500).json({ error: "Error processing file upload" });
+    console.error("Error updating user:", error);
+    if (error.statusCode) {
+      return res.status(statusCode).json({ error: error.message });
+    }
+    res.status(500).json({ error: "Error updating user", reason: error.message });
   }
 };
 

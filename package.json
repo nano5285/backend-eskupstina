@@ -4,10 +4,10 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "start": "node ./src/index.js",
+    "start": "node init && node ./src/index.js",
     "start:dev": "nodemon",
     "serve": "nodemon ./src/index.js",
-    "build": "tsc"
+    "build": "node init && tsc"
   },
   "dependencies": {
     "azure-storage": "^2.10.7",

@@ -43,39 +43,53 @@ app.get("/", (req, res) => {
 
 console.log(config.mongoURI);
 
-ConnectDatabase(String(config.mongoURI));
-app.listen(port, () => {
-  console.log(`Server listening on http://localhost:${port}`);
-});
+// 1. Kreiramo server za HTTP promet i povezujemo ga s Express aplikacijom
+const server = createServer(app); // Koristimo Express 'app'
 
-const httpServer = createServer();
+// 2. Kreiramo asinkronu funkciju za pokretanje aplikacije
+async function startServer() {
+  try {
+    // Čekamo da se baza podataka spoji (ovo sprječava timeout grešku)
+    await ConnectDatabase(String(config.mongoURI));
 
-const io = new Server(httpServer, {
-  cors: {
-    origin: "*",
-  },
-});
+    // 3. Povezujemo Socket.IO s JEDNIM HTTP serverom
+    const io = new Server(server, { // Koristimo 'server' varijablu
+      cors: {
+        origin: "*",
+      },
+    });
 
-// socket.emit("message", "message")
-io.on("connection", (socket: any) => {
-  socket.on("disconnect", function () {
-    console.log("user disconnected");
-  });
-  socket.on("message", function (message: any) {
-    console.log(message);
-    io.emit("message", message);
-    // io.serverSideEmit("message", "world");
-    // socket.emit("message", message)
-  });
-  socket.on("vote_update", function (message: any) {
-    console.log(message);
-    io.emit("vote_update", message);
-  });
+    // 4. Socket.IO logika
+    io.on("connection", (socket: any) => {
+      socket.on("disconnect", function () {
+        console.log("user disconnected");
+      });
+      socket.on("message", function (message: any) {
+        console.log(message);
+        io.emit("message", message);
+      });
+      socket.on("vote_update", function (message: any) {
+        console.log(message);
+        io.emit("vote_update", message);
+      });
 
-  socket.on("vote_close", function (message: any) {
-    console.log(message);
-    io.emit("vote_close", message);
-  });
-});
+      socket.on("vote_close", function (message: any) {
+        console.log(message);
+        io.emit("vote_close", message);
+      });
+    });
 
-io.listen(4000);
+    // 5. Pokrećemo server koji služi i Express i Socket.IO na JEDNOM portu
+    server.listen(port, () => {
+      console.log(`Server listening on http://localhost:${port}`);
+    });
+
+  } catch (error) {
+    console.error("Failed to start server or connect to database:", error);
+    process.exit(1);
+  }
+}
+
+// Pokrećemo funkciju
+startServer();
+// Imajte na umu da su linije 'const httpServer = createServer();' i 'io.listen(4000);' sada UKLONJENE

@@ -49,16 +49,18 @@ const server = createServer(app); // Koristimo Express 'app'
 // 2. Kreiramo asinkronu funkciju za pokretanje aplikacije
 async function startServer() {
   try {
-    // Čekamo da se baza podataka spoji (ovo sprječava timeout grešku)
+    // Čekamo da se baza podataka spoji (ISPRAVAK ZA TIMEOUT)
     await ConnectDatabase(String(config.mongoURI));
 
-    // 3. Povezujemo Socket.IO s JEDNIM HTTP serverom
+    // 3. Povezujemo Socket.IO s JEDNIM HTTP serverom i forsiramo polling
     const io = new Server(server, { // Koristimo 'server' varijablu
       cors: {
         origin: "*",
       },
+      // ISPRAVAK ZA 400 BAD REQUEST
+      transports: ['polling', 'websocket'] // Postavljamo transport na polling i websocket
     });
-
+    
     // 4. Socket.IO logika
     io.on("connection", (socket: any) => {
       socket.on("disconnect", function () {
@@ -79,17 +81,17 @@ async function startServer() {
       });
     });
 
-    // 5. Pokrećemo server koji služi i Express i Socket.IO na JEDNOM portu
+    // 5. Pokrećemo server na JEDNOM portu
     server.listen(port, () => {
       console.log(`Server listening on http://localhost:${port}`);
     });
 
   } catch (error) {
     console.error("Failed to start server or connect to database:", error);
+    // Ako se baza ne spoji, aplikacija se gasi
     process.exit(1);
   }
 }
 
 // Pokrećemo funkciju
 startServer();
-// Imajte na umu da su linije 'const httpServer = createServer();' i 'io.listen(4000);' sada UKLONJENE

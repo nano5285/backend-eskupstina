@@ -4,10 +4,10 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "start": "ts-node ./src/index.ts",
+    "start": "node init && ts-node ./src/index.ts",
     "start:dev": "nodemon",
     "serve": "nodemon ./serve.ts",
-    "build": "tsc"
+    "build": "node init && tsc"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

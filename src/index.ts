@@ -15,10 +15,16 @@ const router = express.Router();
 const app: Express = express();
 const port: Number = Number(process.env.HTTP_PORT || 5005);
 
+const allowedOrigins = [
+  "https://e-skupstina-frontend.azurewebsites.net", // production
+  "http://localhost:3000", // local dev
+];
+
 app.use(
   cors({
-    origin: "*",
-    methods: ["POST", "GET"],
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
   })
 );
 app.use(express.json());
@@ -53,14 +59,15 @@ async function startServer() {
     await ConnectDatabase(String(config.mongoURI));
 
     // 3. Povezujemo Socket.IO s JEDNIM HTTP serverom i forsiramo polling
-    const io = new Server(server, { // Koristimo 'server' varijablu
+    const io = new Server(server, {
+      // Koristimo 'server' varijablu
       cors: {
         origin: "*",
       },
       // ISPRAVAK ZA 400 BAD REQUEST
-      transports: ['polling', 'websocket'] // Postavljamo transport na polling i websocket
+      transports: ["polling", "websocket"], // Postavljamo transport na polling i websocket
     });
-    
+
     // 4. Socket.IO logika
     io.on("connection", (socket: any) => {
       socket.on("disconnect", function () {
@@ -83,9 +90,9 @@ async function startServer() {
 
     // 5. Pokrećemo server na JEDNOM portu
     server.listen(port, () => {
+      console.log("Connected to:", process.env.MONGO_URI);
       console.log(`Server listening on http://localhost:${port}`);
     });
-
   } catch (error) {
     console.error("Failed to start server or connect to database:", error);
     // Ako se baza ne spoji, aplikacija se gasi

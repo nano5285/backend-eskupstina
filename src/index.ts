@@ -15,10 +15,16 @@ const router = express.Router();
 const app: Express = express();
 const port: Number = Number(process.env.HTTP_PORT || 5005);
 
+const allowedOrigins = [
+  "https://e-skupstina-frontend.azurewebsites.net", // production
+  "http://localhost:3000", // local dev
+];
+
 app.use(
   cors({
-    origin: "*",
-    methods: ["POST", "GET"],
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
   })
 );
 app.use(express.json());
@@ -84,6 +90,7 @@ async function startServer() {
 
     // 5. Pokrećemo server na JEDNOM portu
     server.listen(port, () => {
+      console.log("Connected to:", process.env.MONGO_URI);
       console.log(`Server listening on http://localhost:${port}`);
     });
   } catch (error) {
